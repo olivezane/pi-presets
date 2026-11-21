@@ -1,0 +1,14 @@
+{
+  "name": "pi-presets",
+  "version": "0.1.0",
+  "description": "Switch the set of pi extensions per scenario: named presets in ~/.pi/agent/presets.json, applied to settings.json and reloaded",
+  "keywords": [
+    "pi-package"
+  ],
+  "license": "MIT",
+  "pi": {
+    "extensions": [
+      "./extensions/presets.ts"
+    ]
+  }
+}
