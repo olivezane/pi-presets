@@ -74,7 +74,7 @@ const HELP = [
   "/preset use [name]                   switch (no name: pick from the list)",
   "/preset update [name|*]              pi update --extensions, per preset",
   "/preset shared [add|remove <source...>]",
-  "/preset default [name]               what quitting restores (Ctrl+S picks the active one)",
+  "/preset default [name]               what quitting restores",
 ].join("\n");
 
 // A preset name is a bare word; a package source carries npm:/git:/a path. Catches name typos.
@@ -362,30 +362,6 @@ export default function (pi) {
       ctx.ui.notify(typeof cfg.presets?.[first] === "object"
         ? "\"" + first + "\" is a preset, not an action. Switch: /preset use " + first + " — add: /preset add " + first + " <source...>."
         : "Unknown action \"" + first + "\". Run /preset for the list.", "error");
-    },
-  });
-
-  // Ctrl+S marks the preset you are on as the default one, i.e. what quitting restores.
-  pi.registerShortcut("ctrl+s", {
-    description: "Make the active preset the default one",
-    handler: (ctx) => {
-      try {
-        const cfg = loadPresets();
-        cleanup(cfg);
-        const active = snapshotActive(cfg, loadSettings());
-        if (!active) {
-          ctx.ui.notify("No active preset to set as default.", "error");
-          return;
-        }
-        if ((cfg.default ?? "default") === active) {
-          ctx.ui.notify("\"" + active + "\" is already the default preset.", "info");
-          return;
-        }
-        writeJson(presetsFile, { ...cfg, default: active });
-        ctx.ui.notify("Default preset is now \"" + active + "\". Quitting restores it.", "info");
-      } catch (error) {
-        ctx.ui.notify("Ctrl+S could not set the default preset: " + String(error?.message ?? error), "error");
-      }
     },
   });
 

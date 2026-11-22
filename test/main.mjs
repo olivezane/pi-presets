@@ -3,7 +3,7 @@
  *
  * The extension imports getAgentDir/getPackageDir from the pi package, so every scenario copies
  * extensions/presets.ts into a temp dir with those imports replaced by fakes, then drives the real
- * command, shortcut and shutdown hook through a fake pi API.
+ * command and shutdown hook through a fake pi API.
  */
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -38,14 +38,11 @@ async function setup({ settings, presets, mcp, files = {}, reloadThrows = false,
 	writeFileSync(harness, SOURCE);
 	const mod = await import(pathToFileURL(harness).href);
 
-	let cmd, shortcut, shutdown;
-	const sent = [];
+	let cmd, shutdown;
 	mod.default({
 		registerCommand: (_name, options) => { cmd = options; },
-		registerShortcut: (_key, options) => { shortcut = options; },
 		on: (_event, handler) => { shutdown = handler; },
 		exec: async () => ({ code: 0, stdout: "", stderr: "" }),
-		sendUserMessage: (text, options) => sent.push([text, options]),
 	});
 
 	const notify = [];
@@ -67,7 +64,7 @@ async function setup({ settings, presets, mcp, files = {}, reloadThrows = false,
 	};
 
 	return {
-		cmd, shortcut, shutdown, ctx, notify, sent, asked,
+		cmd, shutdown, ctx, notify, asked,
 		last: () => notify.at(-1) ?? "",
 		read: (name) => JSON.parse(readFileSync(join(dir, name), "utf8")),
 		text: (name) => readFileSync(join(dir, name), "utf8"),
@@ -107,7 +104,7 @@ async function setup({ settings, presets, mcp, files = {}, reloadThrows = false,
 	ok("settings keep unrelated keys", t.read("settings.json").defaultModel === "x");
 }
 
-// --- grammar: help, add/remove, delete confirmation, default, Ctrl+S --------
+// --- grammar: help, add/remove, delete confirmation, default ----------------
 {
 	const t = await setup({
 		settings: { packages: ["npm:a"], defaultModel: "x" },
@@ -124,19 +121,11 @@ async function setup({ settings, presets, mcp, files = {}, reloadThrows = false,
 	await t.cmd.handler("default nope", t.ctx);
 	ok("unknown default rejected", t.read("presets.json").default === "web");
 
-	t.shortcut.handler(t.ctx);
-	ok("ctrl+s sets the active preset as default", t.read("presets.json").default === "default" && t.sent.length === 0);
-
 	await t.cmd.handler("use web", t.ctx);
 	ok("active is web", t.read("presets.json").active === "web");
-	t.shortcut.handler({ ...t.ctx, isIdle: () => false });
-	ok("ctrl+s works while busy (no reload)", t.read("presets.json").default === "web");
 
 	await t.cmd.handler("web", t.ctx);
 	ok("bare /preset <name> rejected with hint", t.last().startsWith('error: "web" is a preset, not an action.'));
-
-	t.shortcut.handler(t.ctx);
-	ok("ctrl+s never dispatches a command", t.sent.length === 0 && t.read("presets.json").default === "web");
 
 	await t.cmd.handler("use default", t.ctx);
 	const settingsBefore = snapshot();
@@ -277,10 +266,6 @@ async function setup({ settings, presets, mcp, files = {}, reloadThrows = false,
 
 	await t.cmd.handler("update", t.ctx);
 	ok("'/preset update' still takes the update branch", t.read("presets.json").active === "use" && t.last().includes("pi CLI"));
-
-	const before = t.read("presets.json").active;
-	t.shortcut.handler(t.ctx);
-	ok("ctrl+s sets the active preset as default", t.read("presets.json").default === before && t.sent.length === 0);
 }
 
 // --- guards: bad input, failed reload, corrupt presets.json ----------------
@@ -317,15 +302,6 @@ async function setup({ settings, presets, mcp, files = {}, reloadThrows = false,
 	await t.cmd.handler("default", t.ctx);
 	ok("corrupt presets.json reports itself", t.last().startsWith("error: Presets unavailable") && t.last().includes("is not valid JSON"));
 	ok("corrupt presets.json untouched", t.text("presets.json") === before);
-}
-
-{
-	const t = await setup({
-		settings: { packages: ["npm:a"] },
-		presets: { active: "default", default: "web", presets: { default: { packages: ["npm:a"] }, web: { packages: ["npm:b"] } } },
-	});
-	await t.shortcut.handler(t.ctx);
-	ok("ctrl+s sets default without touching settings", t.read("presets.json").default === "default" && same(srcs(t.read("settings.json").packages), ["npm:a"]));
 }
 
 // --- cleanup of leftovers --------------------------------------------------

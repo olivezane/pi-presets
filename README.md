@@ -29,7 +29,6 @@ pi install git:github.com/<用户名>/pi-presets
 | `/preset shared` | 看共享包 |
 | `/preset shared add\|remove <source...>` | 改共享包，立即生效 |
 | `/preset default [名字]` | 查/设默认预设（退出时恢复的目标） |
-| `Ctrl+S` | 把当前预设设为默认预设 |
 
 格式：`/preset <动作> [<预设名>] <插件...>`。`add`/`remove` 的第二个词若是现存预设名就是目标预设，否则当作插件 source（省略即当前预设）。动作永远在最前，切换一律走 `use`；只写 `/preset <预设名>` 会提示该用哪个动作。
 
@@ -88,5 +87,5 @@ pi install git:github.com/<用户名>/pi-presets
 node test/main.mjs
 ```
 
-`test/main.mjs` 把 `extensions/presets.ts` 复制进临时目录，换掉包导入（假 `getAgentDir`），再用假 `pi` 驱动真命令与钩子。每个场景一套独立临时目录，断言按段落排列：切换/快照/退出、语法与 Ctrl+S、共享包、撞名预设、兜底、清理。
+`test/main.mjs` 把 `extensions/presets.ts` 复制进临时目录，换掉包导入（假 `getAgentDir`），再用假 `pi` 驱动真命令与钩子。每个场景一套独立临时目录，断言按段落排列：切换/快照/退出、语法、共享包、撞名预设、兜底、清理。
 
