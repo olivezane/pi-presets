@@ -6,6 +6,9 @@
     "pi-package"
   ],
   "license": "MIT",
+  "scripts": {
+    "test": "node test/main.mjs"
+  },
   "pi": {
     "extensions": [
       "./extensions/presets.ts"

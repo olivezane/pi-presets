@@ -81,3 +81,12 @@ pi install git:github.com/<用户名>/pi-presets
 `pi remove git:github.com/<用户名>/pi-presets`，把 `settings.json` 改成想要的包列表；`presets.json` 可选保留。
 
 改完本文件或扩展后需 `/reload` 或重启 pi。
+
+## 开发
+
+```bash
+node test/main.mjs
+```
+
+`test/main.mjs` 把 `extensions/presets.ts` 复制进临时目录，换掉包导入（假 `getAgentDir`），再用假 `pi` 驱动真命令与钩子。每个场景一套独立临时目录，断言按段落排列：切换/快照/退出、语法与 Ctrl+S、共享包、撞名预设、兜底、清理。
+
